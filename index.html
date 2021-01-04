@@ -54,8 +54,6 @@
     }
     </style>
 </head>
-
-
 <body>
     <div class="container">
         <header class="row"> Weather Dashboard</header>
@@ -70,24 +68,106 @@
                     </form>
                 </div>
                     <div class="col-8">
-                        <div id="currentDate">
+                        <div id="current-date">
                             <!-- City and Date Information will go here -->
                             <h4 id="city-date">City</h4>            
                             <p id="current-temperature">Temperture: </p>
                             <p id="current-humidity">Humidity: </p>
                             <p id="current-wind-speed"> WindSpeed: </p>
-                            <p>UV Index:  <span id="current-uv-index"></span></p>
+                            <p>UV Index:  <span id="current-uv-index"></span>&emsp;<span id="current-uv-rating"></span></p>
                         </div>
                         <h4>5-Day Forecast:</h4>
                         <div id="five-days">
-                            <div class="daily-five-days">
+                            <!-- The following 5 day information will go here -->
+                            <!--<div class="daily-five-days">
                                 <p class="five-day-date" id="date-day1">8/16/2019</p>
                                 <p class="five-day-content" id="temp-day1">Temp: 86.84</p>
-                                <p class="five-day-content" id="humid-day1">Humidity: 43%</p>
+                                <p class="five-day-content" id="humid-day1">Humidity: 43%</p> 
+                            -->
                             </div>
                         </div>
                     </div>
             </div>
         </div>
 </body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script type="text/javascript">
+
+//API Key from OpenWeather
+var APIKey = "b5d8685a3b179ed416b809775f09ee1d";
+var currentCitySearch = [];
+
+function currentWeather(xTemp, xHumid, xWind, xUv){
+var tempF = (xTemp - 273.15) * 9/5 + 32;
+$("#current-temperature").text("Temperature:  " + tempF.toFixed(1) + String.fromCharCode(8457));
+$("#current-humidity").text("Humidity:  " + xHumid + String.fromCharCode(37));
+$("#current-wind-speed").text("Wind Speed:  " + xWind.toFixed(1) + "MPH");
+$("#current-uv-index").text(xUv);
+//
+if (xUv >= 0 && xUv < 3){
+$("#current-uv-index").css("background-color", "green");
+$("#current-uv-index").css("color", "white");
+} 
+else if (xUv >= 3 && xUv < 6) {
+$("#current-uv-index").css("background-color", "yellow");
+$("#current-uv-index").css("color", "black");
+}
+else if (xUv >= 6 && xUv < 8){
+$("#current-uv-index").css("background-color", "orange");
+}
+else if (xUv >= 8 && xUv < 11){
+$("#current-uv-index").css("background-color", "red");
+}
+else {
+$("#current-uv-index").css("background-color", "violet");
+}
+}
+// Saves previous city that are searched
+function searchHistory(cityName) {
+  var newSearchP = $("<p>");
+  newSearchP.addClass("search-history");
+  newSearchP.text(cityName);
+  $("#search-block").append(newSearchP);
+}
+//Click event to call the API after user enters a city
+$("#search-btn").on("click", function(event){
+$("#five-days").empty();
+var citySearch = $("#search-city").val().trim();
+var queryCall = "https://api.openweathermap.org/data/2.5/weather?q=" + citySearch + "&appid=" + APIKey;
+// We then created an AJAX call
+$.ajax({
+  url: queryCall,
+  method: "GET"
+}).then(function(cityResult) {
+  // Create CODE HERE to Log the queryURL
+  console.log(cityResult);
+  var currentCity = cityResult.name;
+  var currentDate = new Date(cityResult.dt * 1000);
+  var dateMonth = currentDate.getMonth();
+  var dateDay = currentDate.getDate();
+  var dateYear = currentDate.getFullYear();
+  $("#city-date").text(currentCity + " (" + (dateMonth + 1) + "/" + dateDay + "/" + dateYear + ")");
+  $("#img-current-weather").attr("src", "http://openweathermap.org/img/wn/" + cityResult.weather[0].icon + "@2x.png")
+  var lon = cityResult.coord.lon; //longitude coordinate
+  var lat = cityResult.coord.lat; //latitude coordinate
+  weatherQuery(lon, lat);
+  searchHistory(cityResult.name);
+});
+function weatherQuery(xlon, xlat){
+var queryLonlat = "https://api.openweathermap.org/data/2.5/onecall?lat=" + xlat + "&lon=" + xlon + "&exclude=hourly,minutely&appid=" + APIKey;
+$.ajax({
+  url: queryLonlat,
+  method: "GET"
+}).then(function(lonLatresult) {
+  var currentTemp = lonLatresult.current.temp;
+  var currentHumid = lonLatresult.current.humidity;
+  var currentWind = lonLatresult.current.wind_speed;
+  var currentUv = lonLatresult.current.uvi;
+  // Function to call current weather forcast for city on todays date
+  currentWeather(currentTemp, currentHumid, currentWind, currentUv);
+
+})
+} 
+});
+</script>
 </html>
